@@ -1,9 +1,121 @@
-Playwright E2E — UK GA (iNews) & Theme (New Scientist)
+# Playwright-QA-Task
 
-End-to-end tests that validate:
+End‑to‑end tests that validate two real‑world behaviours across news sites:
 
-GA4 consent behaviour on iNews (mobile, UK)
+1. **GA4 consent flow** on iNews Politics (mobile, UK).
+2. **Dark/Light theme persistence** on New Scientist (desktop, UK, Dark mode).
 
-Dark/Light theme behaviour on New Scientist (desktop, UK, Dark mode)
+---
 
-The suite is written to be readable, flake-resistant, and recruiter-friendly (page objects, utilities, clear structure, and helpful debug output).
+## Highlights
+
+* **Playwright (JavaScript)** with clear test naming and comments.
+* **Network inspection** to assert GA4 `g/collect` query params before and after consent.
+* **Resilient consent handling** using role/text selectors; verifies the modal is actually removed from the DOM.
+* **Theme checks** via `<html>` class and `localStorage` for persistence across reloads.
+* **UK region simulation**: `en-GB` language, `Europe/London` timezone.
+* HTML report, screenshots/videos on failure.
+
+---
+
+## Test suites
+
+### Suite 1 — iNews (Politics) GA4 checks
+
+**Goal:** confirm GA4 parameters around the consent flow.
+
+1. Visit `https://inews.co.uk/category/news/politics` on a **mobile Chrome** profile.
+2. Before accepting consent, wait for a GA4 request to `https://www.google-analytics.com/g/collect` with `en=page_view` and assert:
+
+   * `ep.sub_channel_1 = news/politics`
+   * `gcs = G101`
+   * `npa = 1`
+3. Click **Accept** on the consent modal and confirm it is **removed from the DOM**.
+4. After consent, wait for a GA4 `g/collect` with `en=user_engagement` and assert:
+
+   * `gcs = G111`
+   * `npa = 0` **or** the param is absent
+
+### Suite 2 — New Scientist Dark Mode
+
+**Goal:** confirm dark mode defaults and light‑mode override persists.
+
+1. Visit `https://www.newscientist.com/` on **desktop Chrome** with **Dark Mode enabled**.
+2. After the page `load` event, `<html>` has class `Dark`.
+3. `localStorage['colourSchemeAppearance'] === 'Dark'`.
+4. Dismiss the consent modal and verify it is removed.
+5. Click the **Appearance toggle** (`#appearance-toggle`) to force **Light**.
+6. `<html>` now has class `Light` and **not** `Dark`.
+7. `localStorage['colourSchemeAppearance'] === 'Light'`.
+8. Reload and confirm `<html>` still has class `Light` after `load`.
+
+---
+
+## Project structure
+
+```
+Playwright-QA-Task/
+├─ src/                        # helpers / utilities (e.g., GA & consent helpers)
+├─ tests/                      # the two suites live here
+├─ playwright.config.js        # projects, UK headers, timeouts, reports
+├─ package.json                # scripts
+├─ package-lock.json
+├─ .gitignore
+└─ README.md
+```
+
+> File names in `tests/` are self‑describing (e.g. `politics-ga.spec.js`, `newscientist-darkmode.spec.js`). Utilities under `src/` provide request parsing and consent dismissal helpers.
+
+---
+
+## Setup
+
+```bash
+npm ci
+npx playwright install --with-deps
+```
+
+## Run all tests
+
+```bash
+npm test
+```
+
+### Useful variants
+
+```bash
+npm run test -- --headed         # debug locally in a real browser window
+npm run test -- -g "@smoke"      # filter by title/tag
+npm run report                   # open the last HTML report
+```
+
+> Videos, screenshots, and traces are attached on failures by default in CI‑friendly mode.
+
+---
+
+## Configuration (key points)
+
+* **Mobile profile:** Playwright’s Pixel device profile for the iNews suite.
+* **Desktop + Dark Mode:** `colorScheme: 'dark'` for New Scientist.
+* **Locale/timezone:** `locale: 'en-GB'` and `timezoneId: 'Europe/London'`.
+* **Headers:** `Accept-Language: en-GB` to hint UK region.
+
+These are set in `playwright.config.js` at project level so tests stay clean.
+
+---
+
+## How GA4 assertions work
+
+* The tests **listen for network requests** to `https://www.google-analytics.com/g/collect`.
+* They parse the query string and assert the parameters described above.
+* Pre‑consent and post‑consent events are validated separately, ensuring the consent toggle changes analytics behaviour as expected.
+
+---
+
+## Troubleshooting
+
+* **Consent modal not found:** CMPs sometimes A/B test copy. The helper tries several selectors and common button texts (Accept/Agree/Got it). If it fails, run headed and note the exact button text.
+* **Network flake:** GA can batch/queue. The tests already wait for the right `en` value; if your network is slow, re‑run with `--headed` to observe.
+* **Region mismatch:** Make sure `Accept-Language`, `locale`, and `timezoneId` are set as in config.
+
+---
