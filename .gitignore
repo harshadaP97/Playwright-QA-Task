@@ -1,0 +1,26 @@
+# node
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+*.zip
+*.tar
+*.tgz
+
+# videos, traces, screenshots (kept only on failure locally)
+*.webm
+*.mp4
+*.png
+*.zip
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
