@@ -10,7 +10,7 @@ End‑to‑end tests that validate two real‑world behaviours across news sites
 ## Highlights
 
 * **Playwright (JavaScript)** with clear test naming and comments.
-* **Light Page Object Model (POM) layer: `ConsentModal`, `PoliticsPage`, and `HomePage` for maintainable selectors and flows.
+* **Light Page Object Model (POM) layer** `ConsentModal`, `PoliticsPage`, and `HomePage` for maintainable selectors and flows.
 * **Network inspection** to assert GA4 `g/collect` query params before and after consent.
 * **Resilient consent handling** using role/text selectors; verifies the modal is actually removed from the DOM.
 * **Theme checks** via `<html>` class and `localStorage` for persistence across reloads.
