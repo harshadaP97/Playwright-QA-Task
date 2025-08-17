@@ -10,6 +10,7 @@ End‑to‑end tests that validate two real‑world behaviours across news sites
 ## Highlights
 
 * **Playwright (JavaScript)** with clear test naming and comments.
+* **Light Page Object Model (POM) layer: `ConsentModal`, `PoliticsPage`, and `HomePage` for maintainable selectors and flows.
 * **Network inspection** to assert GA4 `g/collect` query params before and after consent.
 * **Resilient consent handling** using role/text selectors; verifies the modal is actually removed from the DOM.
 * **Theme checks** via `<html>` class and `localStorage` for persistence across reloads.
@@ -55,16 +56,29 @@ End‑to‑end tests that validate two real‑world behaviours across news sites
 
 ```
 Playwright-QA-Task/
-├─ src/                        # helpers / utilities (e.g., GA & consent helpers)
-├─ tests/                      # the two suites live here
-├─ playwright.config.js        # projects, UK headers, timeouts, reports
-├─ package.json                # scripts
+├─ src/
+│  ├─ pages/
+│  │  ├─ common/
+│  │  │  └─ ConsentModal.js        # shared CMP interactions
+│  │  ├─ inews/
+│  │  │  └─ PoliticsPage.js        # page object for iNews Politics
+│  │  └─ newscientist/
+│  │     └─ HomePage.js            # page object for New Scientist home
+│  └─ utils/
+│     └─ ga.js                     # GA4 helpers (request parsing, waits)
+├─ tests/
+│  ├─ mobile/
+│  │  └─ politics-ga.spec.js       # Suite 1
+│  └─ desktop/
+│     └─ newscientist-theme.spec.js# Suite 2
+├─ playwright.config.js            # projects (mobile/desktop), UK headers, timeouts, reports
+├─ package.json                    # scripts
 ├─ package-lock.json
 ├─ .gitignore
 └─ README.md
 ```
 
-> File names in `tests/` are self‑describing (e.g. `politics-ga.spec.js`, `newscientist-darkmode.spec.js`). Utilities under `src/` provide request parsing and consent dismissal helpers.
+This repo uses a light POM layer under src/pages/ for clarity and reuse. The ConsentModal handles consent actions shared across sites; site‑specific interactions live in inews/ and newscientist/. Utilities under src/utils/ provide GA request parsing and waits.
 
 ---
 
@@ -80,16 +94,6 @@ npx playwright install --with-deps
 ```bash
 npm test
 ```
-
-### Useful variants
-
-```bash
-npm run test -- --headed         # debug locally in a real browser window
-npm run test -- -g "@smoke"      # filter by title/tag
-npm run report                   # open the last HTML report
-```
-
-> Videos, screenshots, and traces are attached on failures by default in CI‑friendly mode.
 
 ---
 
