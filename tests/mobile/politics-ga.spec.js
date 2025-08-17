@@ -5,7 +5,7 @@ const { waitForGAEvent } = require('../../src/utils/ga');
 
 test.describe('inews — GA consent behaviour (mobile, UK) @mobile', () => {
   test('GA params before and after consent', async ({ page }) => {
-    // Optional: turn on verbose GA logging with DEBUG_GA=1
+    // Debug mode: logs all GA-like requests if DEBUG_GA=1 is set
     if (process.env.DEBUG_GA) {
       page.on('request', r => {
         const u = r.url();
@@ -18,23 +18,23 @@ test.describe('inews — GA consent behaviour (mobile, UK) @mobile', () => {
     const politics = new PoliticsPage(page);
 
     // ---- PAGE VIEW (pre-consent) ----
-    // Start listening BEFORE the action that triggers the request
+    // Begin listening *before* navigation so the GA request is caught
     const pvPromise = waitForGAEvent(page, 'page_view');
-    await politics.goto();                 // trigger page_view
-    const pv = await pvPromise;            // then assert
+    await politics.goto();                 // triggers initial page_view
+    const pv = await pvPromise;            // capture GA params
     expect(pv['ep.sub_channel_1']).toBe('news/politics');
-    expect(pv['gcs']).toBe('G101');        // consent denied
-    expect(pv['npa']).toBe('1');           // non-personalised ads
+    expect(pv['gcs']).toBe('G101');        // consent denied by default
+    expect(pv['npa']).toBe('1');           // non-personalised ads flag
 
     // ---- USER ENGAGEMENT (post-consent) ----
-    // Again: start listening BEFORE clicking Accept
+    // Again: listen *before* the user action that triggers the event
     const uePromise = waitForGAEvent(page, 'user_engagement');
-    await politics.consent.clickAccept();  // trigger consent flow
-    await politics.consent.assertRemoved();
-    const ue = await uePromise;            // then assert
+    await politics.consent.clickAccept();  // simulate user accepting CMP
+    await politics.consent.assertRemoved(); // modal should disappear
+    const ue = await uePromise;            // capture GA params
     expect(ue['gcs']).toBe('G111');        // consent granted
     if (ue['npa'] !== undefined) {
-      expect(ue['npa']).toBe('0');
+      expect(ue['npa']).toBe('0');         // personalised ads allowed
     }
   });
 });

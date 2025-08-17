@@ -4,30 +4,33 @@ const { expect } = require('@playwright/test');
 class ConsentModal {
   constructor(page) {
     this.page = page;
+    // Regex covers common consent button texts (Accept, Got it, I Agree, etc.)
     this.acceptName = /^(accept( all)?|got it|i agree|agree|okay|ok)/i;
 
-    // Stable top-level locator
+    // Main page locator (first match is usually the right one)
     this.topLevelAccept = page.getByRole('button', { name: this.acceptName });
   }
 
   async clickAccept() {
+    // Try top-level button first
     if (await this.topLevelAccept.count()) {
-      await this.topLevelAccept.first().click();
+      await this.topLevelAccept.first().click({ timeout: 15000 });
       return;
     }
-    // Fallback: scan iframes (dynamic logic belongs in methods)
+
+    // Fallback: sometimes the consent lives inside an iframe
     for (const frame of this.page.frames()) {
-      const btn = frame.getByRole('button', { name: this.acceptName });
-      if (await btn.count()) {
-        await btn.first().click();
+      const btn = frame.getByRole('button', { name: this.acceptName }).first();
+      const visible = await btn.isVisible({ timeout: 1000 }).catch(() => false);
+      if (visible) {
+        await btn.click({ timeout: 15000 });
         return;
       }
     }
-    // Optional: throw if not found
-    // throw new Error('Consent accept button not found.');
   }
 
   async assertRemoved() {
+    // Ensure consent modal has been dismissed from DOM
     await expect(this.topLevelAccept).toHaveCount(0);
   }
 }
