@@ -2,8 +2,8 @@
 const { test, expect } = require('@playwright/test');
 const { NewScientistHomePage } = require('../../src/pages/newscientist/HomePage');
 
-test.describe('New Scientist — theme override flow (desktop, UK) @desktop', () => {
-  test('Dark by default → accept consent → toggle to Light → persists on reload', async ({ page }) => {
+test.describe('Theme override flow (desktop, UK) @desktop', () => {
+  test('should persist Light theme after consent and reload', async ({ page }) => {
     const home = new NewScientistHomePage(page);
 
     await test.step('Navigate with dark scheme and wait for load', async () => {
@@ -11,25 +11,20 @@ test.describe('New Scientist — theme override flow (desktop, UK) @desktop', ()
     });
 
     await test.step('Dark class applied and LS set to Dark after load', async () => {
-      // Dark theme should be applied by default in UK region with dark mode
       await home.assertHtmlHasClass('Dark');
       await home.assertLocalStorageAppearance('Dark');
     });
 
     await test.step('Accept consent and ensure modal removed', async () => {
-      // CMP banners can take a few seconds to appear, so wait briefly for one
       await page.waitForSelector(
         'iframe[id*="sp_message" i], iframe[src*="consent" i], [role="dialog"], [aria-modal="true"]',
         { timeout: 5000 }
-      ).catch(() => { /* safe to ignore if modal not found */ });
-
-      // Use the shared ConsentModal helper to accept and verify dismissal
+      ).catch(() => {});
       await home.consent.clickAccept();
       await home.consent.assertRemoved();
     });
 
     await test.step('Toggle to Light and verify classes + localStorage', async () => {
-      // Toggle appearance and assert both DOM class and storage reflect "Light"
       await home.toggleAppearance();
       await home.assertHtmlHasClass('Light');
       await home.assertHtmlNotHasClass('Dark');
@@ -38,8 +33,6 @@ test.describe('New Scientist — theme override flow (desktop, UK) @desktop', ()
 
     await test.step('Reload and verify Light persists after load', async () => {
       await page.reload({ waitUntil: 'domcontentloaded' });
-
-      // Poll for <html> to regain "Light" after reload
       await expect.poll(
         () => page.evaluate(() => document.documentElement.classList.contains('Light')),
         { timeout: 15_000, interval: 200 }
@@ -47,7 +40,6 @@ test.describe('New Scientist — theme override flow (desktop, UK) @desktop', ()
 
       await home.assertHtmlNotHasClass('Dark');
 
-      // Local storage should persist the override as "Light"
       await expect.poll(
         () => page.evaluate(() => localStorage.getItem('colourSchemeAppearance')),
         { timeout: 10_000, interval: 200 }
